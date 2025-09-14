@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Anime Buzz</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
+
+    <style>
+        :root {
+            --background-color: #121212; --card-color: #1e1e1e; --text-color: #f0f0f0;
+            --text-secondary: #aaa; --accent-color: #e50914; --bottom-nav-height: 70px;
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+        }
+        .page { display: none; } .page.active { display: block; }
+        .main-content { padding-bottom: var(--bottom-nav-height); }
+        .app-header { display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 60px; position: fixed; top: 0; left: 0; right: 0; background: rgba(18,18,18,0.8); backdrop-filter: blur(5px); z-index: 100; }
+        .app-header.hidden, .bottom-nav.hidden { display: none; }
+        
+        /* --- LOGO & NAME STYLE --- */
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header-logo img {
+            height: 35px;
+        }
+        .header-logo h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 800;
+        }
+        .header-logo h1 span {
+            color: var(--accent-color);
+            font-weight: 900;
+        }
+        
+        .home-page-content { padding-top: 60px; }
+        .hero-slider-container { width: 100%; position: relative; aspect-ratio: 16 / 9; max-height: 768px; background-color: #000; }
+        .swiper { width: 100%; height: 100%; }
+        .swiper-slide { display: flex; align-items: center; justify-content: flex-start; background-size: cover; background-position: center; padding: 0 5%; cursor: pointer; }
+        .swiper-slide::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to right, rgba(18,18,18,1) 10%, rgba(18,18,18,0.7) 30%, transparent 70%); }
+        .slide-content { position: relative; z-index: 2; max-width: 500px; }
+        .slide-title { font-size: 24px; font-weight: 700; margin: 0; line-height: 1.2; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .watch-now-btn { background-color: var(--accent-color); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; overflow: hidden; margin-top: 25px; text-decoration: none; }
+        .watch-now-btn span { padding: 12px 20px; }
+        .watch-now-btn i { background-color: rgba(0,0,0,0.2); padding: 12px; font-size: 16px; }
+        .swiper-button-next, .swiper-button-prev { display: none; }
+        .swiper-pagination-bullet-active { background-color: white; }
+
+        .section { margin-top: 30px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 0 15px; }
+        .section-header h2 { font-size: 18px; font-weight: 600; }
+        .horizontal-scroll { display: flex; overflow-x: auto; gap: 10px; padding: 0 15px 10px; scrollbar-width: none; }
+        .horizontal-scroll::-webkit-scrollbar { display: none; }
+        .grid-item { flex: 0 0 110px; width: 110px; cursor: pointer; }
+        .grid-item img { width: 100%; border-radius: 8px; aspect-ratio: 2/3; object-fit: cover; background-color: #2c2c2c; }
+        .grid-item p { margin: 8px 0 0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        #search-page { padding: 60px 15px; }
+        .search-container { display: flex; align-items: center; background-color: var(--card-color); padding: 14px 18px; border-radius: 12px; margin: 15px 0 20px 0; }
+        .search-container input { flex-grow: 1; background: none; border: none; outline: none; color: white; font-size: 16px; }
+        .search-results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 15px; }
+        
+        #details-page {
+            background-color: var(--background-color); position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 200; transform: translateX(100%); transition: transform 0.3s ease-in-out;
+            display: flex; flex-direction: column;
+        }
+        #details-page.active { transform: translateX(0); }
+        .details-page-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; }
+        .details-back-btn, .details-settings-btn { background: var(--card-color); border: none; color: white; font-size: 18px; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; }
+        .details-page-content { padding: 0 20px; flex-grow: 1; overflow-y: auto; }
+        .details-page-content h1 { font-size: 32px; font-weight: 800; }
+        #detailsDescription {
+            font-size: 16px; line-height: 1.8; font-weight: 500;
+            background: linear-gradient(90deg, #FFD700, #ff8c00);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+        }
+        .download-button-container { padding: 20px; background-color: var(--background-color); }
+        .download-now-btn { display: block; width: 100%; background-color: #8a4eff; color: white; text-decoration: none; text-align: center; padding: 16px; border-radius: 12px; font-size: 18px; font-weight: 600; }
+        
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: var(--bottom-nav-height); background-color: #1a1a1a; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #333; z-index: 100; }
+        .nav-item { cursor: pointer; display: flex; flex-direction: column; align-items: center; color: var(--text-secondary); font-size: 12px; }
+        .nav-item.active { color: #8a4eff; }
+        .nav-item i { font-size: 22px; margin-bottom: 4px; }
+        .placeholder-page { text-align: center; padding: 80px 20px; }
+    </style>
+</head>
+<body>
+    <div class="app-header">
+        <div class="header-logo">
+            <img src="https://i.postimg.cc/d17vPLCD/In-Shot-20250913-223915587.png" alt="Anime Buzz Logo">
+            <h1>Anime<span>Buzz</span></h1>
+        </div>
+    </div>
+    <div id="main-content" class="main-content">
+        <div id="home-page" class="page active"><div class="home-page-content"><div class="hero-slider-container"><div class="swiper"><div class="swiper-wrapper" id="hero-slider-wrapper"></div><div class="swiper-pagination"></div></div></div><div id="home-grids-container"></div></div></div>
+        <div id="search-page" class="page"><div class="search-page-container"><div class="search-container"><i class="fa-solid fa-magnifying-glass" style="margin-right: 12px;"></i><input type="text" id="searchInput" placeholder="Search all anime..."></div><div class="search-results-grid" id="searchResultsGrid"></div></div></div>
+        <div id="mylist-page" class="page"><div class="placeholder-page"><h2>My List</h2></div></div>
+    </div>
+    <div id="details-page" class="page">
+        <div class="details-page-header">
+            <button class="details-back-btn" id="detailsBackBtn"><i class="fa-solid fa-arrow-left"></i></button>
+            <button class="details-settings-btn"><i class="fa-solid fa-gear"></i></button>
+        </div>
+        <div class="details-page-content">
+            <h1 id="detailsTitle"></h1>
+            <p id="detailsDescription"></p>
+        </div>
+        <div class="download-button-container">
+            <a href="#" id="detailsDownloadBtn" class="download-now-btn" target="_blank">Download Now</a>
+        </div>
+    </div>
+    <div class="bottom-nav">
+        <div class="nav-item active" data-page="home-page"><i class="fa-solid fa-house"></i><span>Home</span></div>
+        <div class="nav-item" data-page="search-page"><i class="fa-solid fa-magnifying-glass"></i><span>Search</span></div>
+        <div class="nav-item" data-page="mylist-page"><i class="fa-solid fa-bookmark"></i><span>My List</span></div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    
+    <!-- Firebase SDK Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        // --- START: FIREBASE CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDwHOdY-DUhMTk6s2BwFk86ccuIvjg1E5Q",
+            authDomain: "animephoto-16ebf.firebaseapp.com",
+            projectId: "animephoto-16ebf",
+            storageBucket: "animephoto-16ebf.firebasestorage.app",
+            messagingSenderId: "829831878245",
+            appId: "1:829831878245:web:958a1681c6fcbf9612188c",
+            measurementId: "G-76G7M339TT"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const animeCollection = db.collection('anime');
+        const bannerCollection = db.collection('banners');
+        // --- END: FIREBASE CONFIGURATION ---
+
+        let localAnimeDB = [];
+        let localSliderDB = [];
+        let swiperInstance = null;
+
+        const pages = document.querySelectorAll('#main-content .page');
+        const navItems = document.querySelectorAll('.nav-item');
+        const searchInput = document.getElementById('searchInput');
+        const detailsPage = document.getElementById('details-page');
+        const appHeader = document.querySelector('.app-header');
+        const bottomNav = document.querySelector('.bottom-nav');
+
+        function renderHomePage(animeData = [], bannerData = []) {
+            // Render Banners in Hero Slider
+            const heroSliderWrapper = document.getElementById('hero-slider-wrapper');
+            if (heroSliderWrapper) {
+                heroSliderWrapper.innerHTML = bannerData.map(banner => 
+                    `<div class="swiper-slide" style="background-image: url('${banner.heroImage}')">
+                        <div class="slide-content">
+                            <h1 class="slide-title">${banner.title}</h1>
+                            <a href="${banner.telegramLink}" target="_blank" class="watch-now-btn">
+                                <span>WATCH NOW</span><i class="fa-solid fa-chevron-right"></i>
+                            </a>
+                        </div>
+                    </div>`
+                ).join('');
+                
+                if (swiperInstance) swiperInstance.destroy(true, true);
+                swiperInstance = new Swiper('.swiper', { 
+                    loop: bannerData.length > 1, 
+                    autoplay: { delay: 5000, disableOnInteraction: false }, 
+                    pagination: { el: '.swiper-pagination', clickable: true } 
+                });
+            }
+
+            // Render Anime Grids by Category
+            const homeGridsContainer = document.getElementById('home-grids-container');
+            if (homeGridsContainer) {
+                const categories = animeData.reduce((acc, anime) => {
+                    const category = anime.category || 'General';
+                    (acc[category] = acc[category] || []).push(anime);
+                    return acc;
+                }, {});
+                homeGridsContainer.innerHTML = Object.entries(categories).map(([category, animeList]) => 
+                    `<div class="section">
+                        <div class="section-header">
+                            <h2>${category}</h2>
+                        </div>
+                        <div class="horizontal-scroll">
+                            ${animeList.map(anime => 
+                                `<div class="grid-item" data-id="${anime.id}">
+                                    <img src="${anime.posterImg}" loading="lazy">
+                                    <p>${anime.title}</p>
+                                </div>`
+                            ).join('')}
+                        </div>
+                    </div>`
+                ).join('');
+            }
+        }
+        
+        function renderSearchPage(animeData = []) {
+            const searchResultsGrid = document.getElementById('searchResultsGrid');
+            if(searchResultsGrid) {
+                searchResultsGrid.innerHTML = animeData.map(anime => 
+                    `<div class="grid-item" data-id="${anime.id}">
+                        <img src="${anime.posterImg}" loading="lazy">
+                        <p>${anime.title}</p>
+                    </div>`
+                ).join('');
+            }
+        }
+        
+        function renderDetailsPage(data) {
+            document.getElementById('detailsTitle').innerText = data.title;
+            document.getElementById('detailsDescription').innerText = data.description;
+            document.getElementById('detailsDownloadBtn').href = data.telegramLink;
+            detailsPage.classList.add('active'); 
+            appHeader.classList.add('hidden'); 
+            bottomNav.classList.add('hidden');
+        }
+
+        function hideDetailsPage() { 
+            detailsPage.classList.remove('active'); 
+            appHeader.classList.remove('hidden'); 
+            bottomNav.classList.remove('hidden'); 
+        }
+        
+        function showPage(pageId) {
+            pages.forEach(page => page.classList.remove('active'));
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) targetPage.classList.add('active');
+        }
+        
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                navItems.forEach(nav => nav.classList.remove('active'));
+                item.classList.add('active');
+                showPage(item.dataset.page);
+            });
+        });
+        
+        searchInput.addEventListener('keyup', () => { 
+            const query = searchInput.value.toLowerCase(); 
+            document.querySelectorAll('#searchResultsGrid .grid-item').forEach(item => { 
+                const title = item.querySelector('p').innerText.toLowerCase(); 
+                item.style.display = title.includes(query) ? 'block' : 'none'; 
+            }); 
+        });
+        
+        document.body.addEventListener('click', e => {
+            const item = e.target.closest('.grid-item');
+            if (item) {
+                const anime = localAnimeDB.find(a => a.id === item.dataset.id);
+                if (anime) renderDetailsPage(anime);
+            }
+        });
+
+        document.getElementById('detailsBackBtn').addEventListener('click', hideDetailsPage);
+
+        // --- REAL-TIME DATA LISTENER FROM FIRESTORE ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Listen for anime data
+            animeCollection.onSnapshot(snapshot => {
+                localAnimeDB = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderHomePage(localAnimeDB, localSliderDB);
+                renderSearchPage(localAnimeDB);
+            }, err => {
+                console.error("Error fetching anime data: ", err);
+            });
+
+            // Listen for banner data
+            bannerCollection.onSnapshot(snapshot => {
+                localSliderDB = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderHomePage(localAnimeDB, localSliderDB);
+            }, err => {
+                console.error("Error fetching banner data: ", err);
+            });
+        });
+    </script>
+</body>
+</html>

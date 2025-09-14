@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Buzz - Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --background-color: #121212; --card-color: #1e1e1e; --text-color: #f0f0f0;
+            --text-secondary: #aaa; --accent-color: #8a4eff; --danger-color: #ff3b30;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: sans-serif; background-color: var(--background-color); color: var(--text-color); margin: 0; }
+        .admin-view { display: none; } .admin-view.active { display: block; }
+        .admin-header { padding: 20px; text-align: center; border-bottom: 1px solid #333;}
+        .admin-header h2 { font-size: 18px; color: var(--text-secondary); margin: 0; text-transform: uppercase; letter-spacing: 1px;}
+        .list-container { padding: 20px 20px 90px 20px; }
+        .list-item { display: flex; justify-content: space-between; align-items: center; background-color: var(--card-color); padding: 15px; border-radius: 8px; margin-bottom: 10px; }
+        .list-item p { margin: 0; font-size: 16px; }
+        .list-item .actions { display: flex; gap: 10px; }
+        .list-item button { background: none; border: none; color: var(--text-secondary); font-size: 18px; cursor: pointer; }
+        .admin-bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background-color: #1a1a1a; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #333; z-index: 110; }
+        .admin-nav-item { cursor: pointer; display: flex; flex-direction: column; align-items: center; color: var(--text-secondary); font-size: 12px; }
+        .admin-nav-item.active { color: var(--accent-color); }
+        .admin-nav-item i { font-size: 22px; margin-bottom: 4px; }
+        #add-fab { width: 60px; height: 60px; background-color: var(--accent-color); color: white; border: none; border-radius: 50%; font-size: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.4); margin-top: -30px; }
+        .modal-overlay { display: none; position: fixed; inset: 0; background-color: rgba(0,0,0,0.7); z-index: 200; align-items: flex-end; justify-content: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background-color: var(--card-color); width: 100%; padding: 20px; border-radius: 16px 16px 0 0; }
+        .modal-content button { width: 100%; padding: 15px; border-radius: 8px; border: 1px solid #444; background-color: #333; color: white; font-size: 16px; margin-bottom: 10px; text-align: left; }
+        .form-page { display: none; background-color: var(--background-color); position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 300; overflow-y: auto; }
+        .form-page.active { display: block; }
+        .form-header { display: flex; align-items: center; padding: 10px 15px; }
+        .form-back-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+        .form-header h2 { margin: 0; padding-left: 15px; font-size: 20px; }
+        .form-content { padding: 15px 25px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; }
+        .form-group input, .form-group textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background-color: #333; color: var(--text-color); font-size: 1em; }
+        .form-group textarea { min-height: 120px; }
+        .save-btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; background-color: var(--accent-color); color: white; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div id="anime-view" class="admin-view active"><div class="admin-header"><h2>Anime List</h2></div><div class="list-container" id="adminAnimeList"></div></div>
+    <div id="banner-view" class="admin-view"><div class="admin-header"><h2>Banner List</h2></div><div class="list-container" id="adminBannerList"></div></div>
+    <div class="admin-bottom-nav">
+        <div class="admin-nav-item active" data-view="anime-view"><i class="fa-solid fa-list"></i><span>Anime</span></div>
+        <button id="add-fab">+</button>
+        <div class="admin-nav-item" data-view="banner-view"><i class="fa-solid fa-images"></i><span>Banners</span></div>
+    </div>
+    <div id="add-choice-modal" class="modal-overlay"><div class="modal-content"><button id="openAnimeFormBtn">Add New Anime</button><button id="openBannerFormBtn">Add New Banner</button></div></div>
+    <div id="anime-form-page" class="form-page"><div class="form-header"><button class="form-back-btn">&larr;</button><h2 id="animeFormTitle">Add Anime</h2></div><div class="form-content"><form id="animeForm"><input type="hidden" id="animeId"><div class="form-group"><label>Title</label><input type="text" id="title" required></div><div class="form-group"><label>Poster Image URL</label><input type="url" id="posterImg" required></div><div class="form-group"><label>Category</label><input type="text" id="category" placeholder="e.g., ⚡ Action Packed" required></div><div class="form-group"><label>Description</label><textarea id="description" required></textarea></div><div class="form-group"><label>Telegram Link</label><input type="url" id="telegramLink" required></div><button type="submit" class="save-btn">Save Anime</button></form></div></div>
+    <div id="banner-form-page" class="form-page"><div class="form-header"><button class="form-back-btn">&larr;</button><h2 id="bannerFormTitle">Add Banner</h2></div><div class="form-content"><form id="bannerForm"><input type="hidden" id="bannerId"><div class="form-group"><label>Banner Title</label><input type="text" id="bannerTitle" required></div><div class="form-group"><label>Banner Image URL</label><input type="url" id="heroImage" required></div><div class="form-group"><label>Banner Description</label><textarea id="bannerDescription" required></textarea></div><div class="form-group"><label>Telegram Link</label><input type="url" id="bannerLink" required></div><button type="submit" class="save-btn">Save Banner</button></form></div></div>
+
+    <!-- Firebase SDK Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        // --- START: FIREBASE CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDwHOdY-DUhMTk6s2BwFk86ccuIvjg1E5Q",
+            authDomain: "animephoto-16ebf.firebaseapp.com",
+            projectId: "animephoto-16ebf",
+            storageBucket: "animephoto-16ebf.firebasestorage.app",
+            messagingSenderId: "829831878245",
+            appId: "1:829831878245:web:958a1681c6fcbf9612188c",
+            measurementId: "G-76G7M339TT"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const animeCollection = db.collection('anime');
+        const bannerCollection = db.collection('banners');
+        // --- END: FIREBASE CONFIGURATION ---
+
+        let localAnimeDB = [];
+        let localSliderDB = [];
+        let currentEditAnimeId = null;
+        let currentEditBannerId = null;
+
+        function showAdminView(viewId) {
+            document.querySelectorAll('.admin-view').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            document.querySelectorAll('.admin-nav-item').forEach(nav => {
+                nav.classList.toggle('active', nav.dataset.view === viewId);
+            });
+        }
+
+        function showFormPage(pageId) { document.getElementById(pageId).classList.add('active'); }
+        function hideFormPages() { document.querySelectorAll('.form-page').forEach(p => p.classList.remove('active')); }
+        
+        // Renders Anime List from data provided by Firestore
+        function renderAdminAnimeList(animeData) {
+            localAnimeDB = [...animeData];
+            document.getElementById('adminAnimeList').innerHTML = animeData.map(anime => 
+                `<div class="list-item">
+                    <p>${anime.title}</p>
+                    <div class="actions">
+                        <button class="edit-btn" data-id="${anime.id}"><i class="fa-solid fa-pen"></i></button>
+                        <button class="delete-btn" data-id="${anime.id}"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>`
+            ).join('');
+        }
+
+        // Renders Banner List from data provided by Firestore
+        function renderAdminBannerList(bannerData) {
+            localSliderDB = [...bannerData];
+            document.getElementById('adminBannerList').innerHTML = bannerData.map(banner => 
+                `<div class="list-item">
+                    <p>${banner.title}</p>
+                    <div class="actions">
+                        <button class="edit-banner-btn" data-id="${banner.id}"><i class="fa-solid fa-pen"></i></button>
+                        <button class="delete-banner-btn" data-id="${banner.id}"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>`
+            ).join('');
+        }
+        
+        // --- REAL-TIME DATA LISTENER FROM FIRESTORE ---
+        // Listen for real-time updates to the anime collection
+        animeCollection.onSnapshot(snapshot => {
+            const animeData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderAdminAnimeList(animeData);
+        });
+
+        // Listen for real-time updates to the banners collection
+        bannerCollection.onSnapshot(snapshot => {
+            const bannerData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderAdminBannerList(bannerData);
+        });
+
+        document.querySelectorAll('.admin-nav-item').forEach(nav => nav.addEventListener('click', () => showAdminView(nav.dataset.view)));
+        document.getElementById('add-fab').addEventListener('click', () => document.getElementById('add-choice-modal').classList.add('active'));
+        document.getElementById('add-choice-modal').addEventListener('click', (e) => { if(e.target.id === 'add-choice-modal') e.target.classList.remove('active'); });
+        
+        document.getElementById('openAnimeFormBtn').addEventListener('click', () => {
+            currentEditAnimeId = null;
+            document.getElementById('animeForm').reset();
+            document.getElementById('animeFormTitle').innerText = "Add Anime";
+            showFormPage('anime-form-page');
+            document.getElementById('add-choice-modal').classList.remove('active');
+        });
+        
+        document.getElementById('openBannerFormBtn').addEventListener('click', () => {
+            currentEditBannerId = null;
+            document.getElementById('bannerForm').reset();
+            document.getElementById('bannerFormTitle').innerText = "Add Banner";
+            showFormPage('banner-form-page');
+            document.getElementById('add-choice-modal').classList.remove('active');
+        });
+        
+        document.querySelectorAll('.form-back-btn').forEach(btn => btn.addEventListener('click', hideFormPages));
+
+        document.getElementById('adminAnimeList').addEventListener('click', e => {
+            const editBtn = e.target.closest('.edit-btn');
+            const deleteBtn = e.target.closest('.delete-btn');
+            
+            if (editBtn) {
+                currentEditAnimeId = editBtn.dataset.id;
+                const anime = localAnimeDB.find(a => a.id === currentEditAnimeId);
+                if (anime) {
+                    document.getElementById('animeId').value = anime.id;
+                    document.getElementById('title').value = anime.title;
+                    document.getElementById('posterImg').value = anime.posterImg;
+                    document.getElementById('category').value = anime.category;
+                    document.getElementById('description').value = anime.description;
+                    document.getElementById('telegramLink').value = anime.telegramLink;
+                    document.getElementById('animeFormTitle').innerText = "Edit Anime";
+                    showFormPage('anime-form-page');
+                }
+            }
+            if (deleteBtn) {
+                if (confirm('Delete this anime?')) {
+                    // Delete from Firestore
+                    animeCollection.doc(deleteBtn.dataset.id).delete();
+                }
+            }
+        });
+
+        document.getElementById('adminBannerList').addEventListener('click', e => {
+            const editBtn = e.target.closest('.edit-banner-btn');
+            const deleteBtn = e.target.closest('.delete-banner-btn');
+            
+            if (editBtn) {
+                currentEditBannerId = editBtn.dataset.id;
+                const banner = localSliderDB.find(b => b.id === currentEditBannerId);
+                if (banner) {
+                    document.getElementById('bannerId').value = banner.id;
+                    document.getElementById('bannerTitle').value = banner.title;
+                    document.getElementById('heroImage').value = banner.heroImage;
+                    document.getElementById('bannerDescription').value = banner.description || '';
+                    document.getElementById('bannerLink').value = banner.telegramLink || '';
+                    document.getElementById('bannerFormTitle').innerText = "Edit Banner";
+                    showFormPage('banner-form-page');
+                }
+            }
+            if (deleteBtn) {
+                if (confirm('Delete this banner?')) {
+                    // Delete from Firestore
+                    bannerCollection.doc(deleteBtn.dataset.id).delete();
+                }
+            }
+        });
+
+        document.getElementById('animeForm').addEventListener('submit', e => {
+            e.preventDefault();
+            const animeData = {
+                title: document.getElementById('title').value,
+                posterImg: document.getElementById('posterImg').value,
+                category: document.getElementById('category').value,
+                description: document.getElementById('description').value,
+                telegramLink: document.getElementById('telegramLink').value,
+            };
+
+            if (currentEditAnimeId) {
+                // Update existing document in Firestore
+                animeCollection.doc(currentEditAnimeId).update(animeData);
+            } else {
+                // Add new document to Firestore
+                animeCollection.add(animeData);
+            }
+            hideFormPages();
+        });
+
+        document.getElementById('bannerForm').addEventListener('submit', e => {
+            e.preventDefault();
+            const bannerData = {
+                title: document.getElementById('bannerTitle').value,
+                heroImage: document.getElementById('heroImage').value,
+                description: document.getElementById('bannerDescription').value,
+                telegramLink: document.getElementById('bannerLink').value || '#',
+            };
+
+            if (currentEditBannerId) {
+                // Update existing document in Firestore
+                bannerCollection.doc(currentEditBannerId).update(bannerData);
+            } else {
+                // Add new document to Firestore
+                bannerCollection.add(bannerData);
+            }
+            hideFormPages();
+        });
+    </script>
+</body>
+</html>
